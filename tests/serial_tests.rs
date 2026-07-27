@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod tests {
+mod serial_tests {
     use std::sync::Arc;
     use std::thread;
     use occ::{OccEngine, SerialEngine, OccError};
@@ -17,11 +17,15 @@ mod tests {
         assert_eq!(write_result, Ok(true));
 
         // 2. Read it back
-        let val = engine.transaction(|tx| {
+        let val1 = engine.transaction(|tx| {
             Ok(tx.read(&"KeyA"))
         }).unwrap();
+        let val2 = engine.transaction(|tx| {
+            Ok(tx.read(&"KeyB"))
+        }).unwrap();
         
-        assert_eq!(val, Some(100));
+        assert_eq!(val1, Some(100));
+        assert_eq!(val2, Some(200));
     }
 
     #[test]

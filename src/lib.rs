@@ -10,6 +10,7 @@ mod transaction;
 pub mod engine;
 
 pub use engine::OccEngine;
+pub use engine::parallel::ParallelEngine;
 pub use engine::serial::SerialEngine;
 pub use error::OccError;
 pub use transaction::Transaction;
