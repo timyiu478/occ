@@ -27,6 +27,12 @@ struct ParallelEngineState<K> {
     active_validating: BTreeMap<u64, HashSet<K>>,
 }
 
+impl<K, V> Default for ParallelEngine<K, V> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<K, V> ParallelEngine<K, V> {
     pub fn new() -> Self {
         Self {

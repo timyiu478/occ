@@ -25,6 +25,12 @@ struct SerialEngineState<K> {
     active_snapshots: BTreeMap<u64, usize>,
 }
 
+impl<K, V> Default for SerialEngine<K, V> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<K, V> SerialEngine<K, V> {
     pub fn new() -> Self {
         Self {
