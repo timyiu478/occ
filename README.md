@@ -64,6 +64,12 @@ The benchmark data highlights the fundamental trade-offs in Optimistic Concurren
 
 * The High Contention Penalty: Under high contention (10 keys), the Parallel engine's performance degrades rapidly as thread count increases. At 16 threads, the Parallel engine's abort rate spikes to 93.97%, causing its throughput to plummet to just 20,694 tx/s. In this scenario, the Serial engine actually wins (88,612 tx/s) despite having a high abort rate itself (44.57%). This illustrates that optimistic concurrency is counterproductive when data overlap is highly probable.
 
+**Runtime Specification:**
+
+* CPU: 2.3 GHz Quad-Core Intel Core i5
+* Memory: 8 GB 2133 MHz LPDDR3
+* OS: macOS 15.3.1
+
 ## References
 
 1. [Kung, Hsiang-Tsung, and John T. Robinson. "On optimistic methods for concurrency control." ACM Transactions on Database Systems (TODS) 6.2 (1981): 213-226.](https://www.eecs.harvard.edu/~htk/publication/1981-tods-kung-robinson.pdf)
