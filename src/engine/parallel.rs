@@ -4,8 +4,8 @@ use crate::storage::Storage;
 use crate::transaction::{LocalChange, Transaction, TxCleanup};
 use std::collections::{BTreeMap, HashSet};
 use std::hash::Hash;
-use std::sync::{Mutex, RwLock};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Mutex, RwLock};
 
 struct CommittedTx<K> {
     tx_id: u64,
@@ -47,9 +47,7 @@ impl<K, V> ParallelEngine<K, V> {
         let mut snapshots = self.active_snapshots.lock().unwrap();
 
         // 1. Deregister the start_tn from active snapshots
-        if let std::collections::btree_map::Entry::Occupied(mut entry) =
-            snapshots.entry(start_tn)
-        {
+        if let std::collections::btree_map::Entry::Occupied(mut entry) = snapshots.entry(start_tn) {
             *entry.get_mut() -= 1;
             if *entry.get() == 0 {
                 entry.remove();
