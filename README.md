@@ -70,6 +70,12 @@ The benchmark data highlights the fundamental trade-offs in Optimistic Concurren
 * Memory: 8 GB 2133 MHz LPDDR3
 * OS: macOS 15.3.1
 
+**How to run benchmark:**
+
+```
+cargo run --release --example benchmark
+```
+
 ## References
 
 1. [Kung, Hsiang-Tsung, and John T. Robinson. "On optimistic methods for concurrency control." ACM Transactions on Database Systems (TODS) 6.2 (1981): 213-226.](https://www.eecs.harvard.edu/~htk/publication/1981-tods-kung-robinson.pdf)
