@@ -113,7 +113,7 @@ where
     // std::thread::scope allows threads to safely borrow `engine` without 'static bounds
     let mut all_latencies = thread::scope(|s| {
         let mut handles = Vec::with_capacity(config.num_threads);
-        
+
         for thread_id in 0..config.num_threads {
             let running_clone = Arc::clone(&running);
             let total_clone = Arc::clone(&total_attempts);
@@ -123,9 +123,9 @@ where
             let handle = s.spawn(move || {
                 let mut rng = FastRng::new((thread_id as u64 + 1) * 987654321);
                 let key_space = config.contention.key_space_size();
-                
+
                 // Pre-allocate vector to prevent resize overheads in the hot loop
-                let mut local_latencies = Vec::with_capacity(500_000); 
+                let mut local_latencies = Vec::with_capacity(500_000);
 
                 while running_clone.load(Ordering::Relaxed) {
                     total_clone.fetch_add(1, Ordering::Relaxed);
@@ -165,7 +165,7 @@ where
         // Run benchmark for the configured duration while worker threads execute
         thread::sleep(config.test_duration);
         running.store(false, Ordering::SeqCst);
-        
+
         // Collect all latency vectors from joined threads
         let mut merged_latencies = Vec::new();
         for handle in handles {
@@ -181,13 +181,13 @@ where
     // Calculate Percentiles
     let mut p50_latency = 0.0;
     let mut p99_latency = 0.0;
-    
+
     if !all_latencies.is_empty() {
         all_latencies.sort_unstable(); // Sort to find percentiles
         let len = all_latencies.len() as f64;
         let p50_idx = (len * 0.50) as usize;
         let p99_idx = (len * 0.99) as usize;
-        
+
         p50_latency = all_latencies[p50_idx.min(all_latencies.len() - 1)] as f64;
         p99_latency = all_latencies[p99_idx.min(all_latencies.len() - 1)] as f64;
     }
