@@ -10,59 +10,80 @@ The primary goal of this project is to make theoretical concurrency methods conc
 
 The following table compares the performance of the Serial and Parallel engines across varying levels of contention and thread counts.
 
-```
-=============================================================================================
-                       OCC BENCHMARK: SERIAL vs PARALLEL ENGINE                              
-=============================================================================================
-Engine     | Contention      | Threads | Attempted    | Committed    | Abort Rate  | Throughput (tx/s)
----------------------------------------------------------------------------------------------
-Serial     | Low (100k keys) | 1       | 984095       | 984095       | 0.00      % | 491637.74      
-Parallel   | Low (100k keys) | 1       | 1013368      | 1013368      | 0.00      % | 506508.64      
----------------------------------------------------------------------------------------------
-Serial     | Low (100k keys) | 4       | 289036       | 289020       | 0.01      % | 144476.72      
-Parallel   | Low (100k keys) | 4       | 456731       | 456678       | 0.01      % | 228304.37      
----------------------------------------------------------------------------------------------
-Serial     | Low (100k keys) | 8       | 241079       | 241039       | 0.02      % | 120481.15      
-Parallel   | Low (100k keys) | 8       | 642099       | 641933       | 0.03      % | 320524.64      
----------------------------------------------------------------------------------------------
-Serial     | Low (100k keys) | 16      | 224279       | 224204       | 0.03      % | 111891.00      
-Parallel   | Low (100k keys) | 16      | 447032       | 446818       | 0.05      % | 223302.76      
----------------------------------------------------------------------------------------------
-Serial     | Med (1k keys)   | 1       | 999299       | 999299       | 0.00      % | 498572.60      
-Parallel   | Med (1k keys)   | 1       | 707846       | 707846       | 0.00      % | 353877.06      
----------------------------------------------------------------------------------------------
-Serial     | Med (1k keys)   | 4       | 263193       | 261661       | 0.58      % | 130714.28      
-Parallel   | Med (1k keys)   | 4       | 977473       | 967213       | 1.05      % | 482247.99      
----------------------------------------------------------------------------------------------
-Serial     | Med (1k keys)   | 8       | 370202       | 366284       | 1.06      % | 183113.09      
-Parallel   | Med (1k keys)   | 8       | 590525       | 576638       | 2.35      % | 287846.03      
----------------------------------------------------------------------------------------------
-Serial     | Med (1k keys)   | 16      | 230839       | 223710       | 3.09      % | 111795.78      
-Parallel   | Med (1k keys)   | 16      | 447810       | 428171       | 4.39      % | 213948.94      
----------------------------------------------------------------------------------------------
-Serial     | High (10 keys)  | 1       | 1248269      | 1248269      | 0.00      % | 622768.52      
-Parallel   | High (10 keys)  | 1       | 978321       | 978321       | 0.00      % | 488285.08      
----------------------------------------------------------------------------------------------
-Serial     | High (10 keys)  | 4       | 295138       | 224091       | 24.07     % | 112035.57      
-Parallel   | High (10 keys)  | 4       | 937323       | 496264       | 47.06     % | 247584.31      
----------------------------------------------------------------------------------------------
-Serial     | High (10 keys)  | 8       | 338922       | 239648       | 29.29     % | 119801.70      
-Parallel   | High (10 keys)  | 8       | 825970       | 212363       | 74.29     % | 106153.10      
----------------------------------------------------------------------------------------------
-Serial     | High (10 keys)  | 16      | 319905       | 177319       | 44.57     % | 88612.82       
-Parallel   | High (10 keys)  | 16      | 686456       | 41425        | 93.97     % | 20694.69       
----------------------------------------------------------------------------------------------
+```console
+=====================================================================================================================
+                                     OCC BENCHMARK: SERIAL vs PARALLEL ENGINE                                        
+=====================================================================================================================
+Engine     | Contention      | Threads | Attempted    | Committed    | Abort Rate  | Throughput/s    | p50 (µs)   | p99 (µs)  
+---------------------------------------------------------------------------------------------------------------------
+Serial     | Low (100k keys) | 1       | 869310       | 869310       | 0.00 % | 433161.88       | 2.00       | 4.00      
+Parallel   | Low (100k keys) | 1       | 922370       | 922370       | 0.00 % | 459418.77       | 2.00       | 3.00      
+---------------------------------------------------------------------------------------------------------------------
+Serial     | Low (100k keys) | 4       | 225141       | 225129       | 0.01 % | 109366.01       | 7.00       | 239.00    
+Parallel   | Low (100k keys) | 4       | 650386       | 650356       | 0.00 % | 324555.12       | 6.00       | 52.00     
+---------------------------------------------------------------------------------------------------------------------
+Serial     | Low (100k keys) | 8       | 353953       | 353891       | 0.02 % | 176385.75       | 4.00       | 290.00    
+Parallel   | Low (100k keys) | 8       | 676520       | 676446       | 0.01 % | 337524.68       | 6.00       | 168.00    
+---------------------------------------------------------------------------------------------------------------------
+Serial     | Low (100k keys) | 16      | 340725       | 340582       | 0.04 % | 169625.28       | 4.00       | 1543.00   
+Parallel   | Low (100k keys) | 16      | 454294       | 454195       | 0.02 % | 226275.81       | 6.00       | 601.00    
+---------------------------------------------------------------------------------------------------------------------
+Serial     | Med (1k keys)   | 1       | 1163464      | 1163464      | 0.00 % | 579304.23       | 1.00       | 3.00      
+Parallel   | Med (1k keys)   | 1       | 1050123      | 1050123      | 0.00 % | 522829.17       | 1.00       | 3.00      
+---------------------------------------------------------------------------------------------------------------------
+Serial     | Med (1k keys)   | 4       | 247263       | 245708       | 0.63 % | 122710.88       | 25.00      | 125.00    
+Parallel   | Med (1k keys)   | 4       | 680283       | 675742       | 0.67 % | 337376.73       | 6.00       | 50.00     
+---------------------------------------------------------------------------------------------------------------------
+Serial     | Med (1k keys)   | 8       | 315171       | 310061       | 1.62 % | 154611.97       | 38.00      | 229.00    
+Parallel   | Med (1k keys)   | 8       | 701227       | 695149       | 0.87 % | 346741.75       | 4.00       | 151.00    
+---------------------------------------------------------------------------------------------------------------------
+Serial     | Med (1k keys)   | 16      | 387823       | 382744       | 1.31 % | 190558.25       | 3.00       | 956.00    
+Parallel   | Med (1k keys)   | 16      | 516498       | 508714       | 1.51 % | 253438.50       | 5.00       | 606.00    
+---------------------------------------------------------------------------------------------------------------------
+Serial     | High (10 keys)  | 1       | 1195873      | 1195873      | 0.00 % | 595941.33       | 1.00       | 3.00      
+Parallel   | High (10 keys)  | 1       | 976362       | 976362       | 0.00 % | 487506.19       | 1.00       | 3.00      
+---------------------------------------------------------------------------------------------------------------------
+Serial     | High (10 keys)  | 4       | 304801       | 227499       | 25.36 % | 113676.62       | 20.00      | 107.00    
+Parallel   | High (10 keys)  | 4       | 670733       | 461085       | 31.26 % | 230298.36       | 6.00       | 51.00     
+---------------------------------------------------------------------------------------------------------------------
+Serial     | High (10 keys)  | 8       | 384518       | 250359       | 34.89 % | 124871.50       | 24.00      | 220.00    
+Parallel   | High (10 keys)  | 8       | 772361       | 523452       | 32.23 % | 261225.01       | 5.00       | 129.00    
+---------------------------------------------------------------------------------------------------------------------
+Serial     | High (10 keys)  | 16      | 347895       | 184180       | 47.06 % | 91707.92        | 56.00      | 478.00    
+Parallel   | High (10 keys)  | 16      | 649126       | 407567       | 37.21 % | 203167.79       | 9.00       | 479.00    
+---------------------------------------------------------------------------------------------------------------------
 ```
 
 **Key Findings:**
 
 The benchmark data highlights the fundamental trade-offs in Optimistic Concurrency Control (OCC).
 
-* The Cost of Concurrency Management: At a single thread, the Serial engine consistently outperforms the Parallel engine across all contention levels. The Parallel engine incurs a baseline overhead because it must manage active_validating sets and perform Rule 3 intersection checks. The Serial engine avoids this bookkeeping overhead entirely.
+* The Baseline Cost of Concurrency Management:
+At a single thread, the engines exhibit very similar behavior, but the Serial
+engine slightly outperforms the Parallel engine under Medium and High
+contention (e.g., 595k tx/s vs 487k tx/s at High contention). This highlights
+the baseline overhead the Parallel engine incurs to manage active validation
+sets and Rule 3 intersection checks, which the Serial engine avoids entirely.
 
-* Scalability Under Low/Medium Contention: The Parallel engine scales exceptionally well when transactions rarely overlap. For medium contention (1k keys) at 4 threads, the Parallel engine achieves 482,247 tx/s compared to the Serial engine's 130,714 tx/s, yielding a nearly 4x speedup. This proves the optimistic assumption is highly effective when conflicts are rare. 
+* Scalability and Tail Latency (Low/Medium Contention):
+The Parallel engine significantly outperforms the Serial engine as thread
+counts increase, achieving nearly 3x the throughput of the Serial engine at
+4 and 8 threads under Medium contention. Furthermore, the new latency metrics
+reveal massive tail latency spikes in the Serial engine. For instance, at 16
+threads under Low contention, the Serial engine maintains a low median latency
+(p50 = 4 µs), but its p99 latency explodes to 1543 µs. The Parallel engine
+handles this much better, keeping its p99 at 601 µs.
 
-* The High Contention Penalty: Under high contention (10 keys), the Parallel engine's performance degrades rapidly as thread count increases. At 16 threads, the Parallel engine's abort rate spikes to 93.97%, causing its throughput to plummet to just 20,694 tx/s. In this scenario, the Serial engine actually wins (88,612 tx/s) despite having a high abort rate itself (44.57%). This illustrates that optimistic concurrency is counterproductive when data overlap is highly probable.
+* A Reversal in High Contention Performance:
+Unlike previous runs, the Parallel engine now heavily dominates the Serial
+engine under High contention (10 keys) at higher thread counts. At 16 threads,
+the Parallel engine achieves over double the throughput (203k tx/s vs 91k tx/s)
+and maintains a notably lower abort rate (37.21% vs 47.06%). While both engines
+suffer identical p99 tail latencies (~479 µs) in this worst-case scenario, the
+Parallel engine's validation logic resolves conflicts much more efficiently
+than the Serial engine's bottlenecked architecture.
+
+
 
 **Runtime Specification:**
 
