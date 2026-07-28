@@ -38,7 +38,7 @@ where
         shard.get(key).cloned()
     }
 
-    /// Applies writes concurrently. Disjoint writes hitting different shards 
+    /// Applies writes concurrently. Disjoint writes hitting different shards
     /// will not block each other.
     pub fn apply_batch(&self, puts: Vec<(K, V)>, deletes: Vec<K>) {
         // 1. Group all incoming writes by their target shard
@@ -56,7 +56,7 @@ where
         }
 
         // 2. Apply writes shard-by-shard.
-        // NOTE: Iterating from 0 to NUM_SHARDS guarantees we always lock in a 
+        // NOTE: Iterating from 0 to NUM_SHARDS guarantees we always lock in a
         // strictly ascending order, which mathematically prevents ABBA deadlocks
         for i in 0..NUM_SHARDS {
             let has_puts = !sharded_puts[i].is_empty();

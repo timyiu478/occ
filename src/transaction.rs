@@ -1,6 +1,6 @@
+use crate::storage::Storage;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
-use crate::storage::Storage;
 
 /// RAII Guard that executes a cleanup callback when dropped
 pub struct TxCleanup<'a> {

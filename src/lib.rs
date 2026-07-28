@@ -1,6 +1,6 @@
 //! # OCC Engine
 //!
-//! An Optimistic Concurrency Control implementation in Rust 
+//! An Optimistic Concurrency Control implementation in Rust
 //! based on Kung & Robinson (1981).
 mod storage;
 

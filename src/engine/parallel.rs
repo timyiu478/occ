@@ -1,12 +1,11 @@
-use std::collections::{BTreeMap, HashSet};
-use std::hash::Hash;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::RwLock;
+use super::OccEngine;
 use crate::error::OccError;
 use crate::storage::Storage;
 use crate::transaction::{LocalChange, Transaction, TxCleanup};
-use super::OccEngine;
-
+use std::collections::{BTreeMap, HashSet};
+use std::hash::Hash;
+use std::sync::RwLock;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 struct CommittedTx<K> {
     tx_id: u64,
@@ -15,8 +14,8 @@ struct CommittedTx<K> {
 
 pub struct ParallelEngine<K, V> {
     storage: Storage<K, V>,
-    global_tn: AtomicU64,    // Used for committed transaction sequence numbers (tn)
-    next_tx_id: AtomicU64,   // Used to assign unique active IDs
+    global_tn: AtomicU64, // Used for committed transaction sequence numbers (tn)
+    next_tx_id: AtomicU64, // Used to assign unique active IDs
     state: RwLock<ParallelEngineState<K>>,
 }
 
@@ -35,7 +34,7 @@ impl<K, V> ParallelEngine<K, V> {
             storage: Storage::new(),
             global_tn: AtomicU64::new(1),
             next_tx_id: AtomicU64::new(1),
-            state: RwLock::new(ParallelEngineState{
+            state: RwLock::new(ParallelEngineState {
                 history: Vec::new(),
                 active_validating: BTreeMap::new(),
                 active_snapshots: BTreeMap::new(),
@@ -49,7 +48,9 @@ impl<K, V> ParallelEngine<K, V> {
         let mut state = self.state.write().unwrap();
 
         // 1. Deregister the start_tn from active snapshots
-        if let std::collections::btree_map::Entry::Occupied(mut entry) = state.active_snapshots.entry(start_tn) {
+        if let std::collections::btree_map::Entry::Occupied(mut entry) =
+            state.active_snapshots.entry(start_tn)
+        {
             *entry.get_mut() -= 1;
             if *entry.get() == 0 {
                 entry.remove();
@@ -66,9 +67,10 @@ impl<K, V> ParallelEngine<K, V> {
             .unwrap_or_else(|| self.global_tn.load(Ordering::SeqCst));
 
         // 3. Prune history entries that are strictly older than or equal to min_active_tn
-        state.history.retain(|committed| committed.tx_id > min_active_tn);
+        state
+            .history
+            .retain(|committed| committed.tx_id > min_active_tn);
     }
-
 }
 
 impl<'a, K, V> OccEngine<'a, K, V> for ParallelEngine<K, V>
@@ -90,7 +92,6 @@ where
         Transaction::new_with_cleanup(start_tn, &self.storage, cleanup)
     }
 
-
     fn commit(&self, tx: &mut Transaction<'a, K, V>) -> Result<(), OccError> {
         let active_id = self.next_tx_id.fetch_add(1, Ordering::SeqCst);
         let write_keys: HashSet<K> = tx.write_set.keys().cloned().collect();
@@ -103,8 +104,10 @@ where
 
             finish_tn = self.global_tn.load(Ordering::SeqCst);
             finish_active = state.active_validating.values().cloned().collect();
-            
-            state.active_validating.insert(active_id, write_keys.clone());
+
+            state
+                .active_validating
+                .insert(active_id, write_keys.clone());
         }
 
         let mut valid = true;
@@ -112,7 +115,7 @@ where
         // Validate against COMMITTED transactions (start_tn + 1 to finish_tn)
         {
             let state = self.state.read().unwrap(); // SHARED read lock!
- 
+
             for committed in state.history.iter().rev() {
                 if committed.tx_id <= tx.start_tn {
                     break;
@@ -120,7 +123,11 @@ where
                 if committed.tx_id > finish_tn {
                     continue;
                 }
-                if committed.keys_modified.iter().any(|k| tx.read_set.contains(k)) {
+                if committed
+                    .keys_modified
+                    .iter()
+                    .any(|k| tx.read_set.contains(k))
+                {
                     valid = false;
                     break;
                 }
@@ -130,7 +137,10 @@ where
         // Validate against ACTIVE validating transactions (finish_active)
         if valid {
             for active_write_set in finish_active {
-                if active_write_set.iter().any(|k| tx.read_set.contains(k) || write_keys.contains(k)) {
+                if active_write_set
+                    .iter()
+                    .any(|k| tx.read_set.contains(k) || write_keys.contains(k))
+                {
                     valid = false;
                     break;
                 }
@@ -140,7 +150,7 @@ where
         if valid && write_keys.is_empty() {
             let mut state = self.state.write().unwrap();
             state.active_validating.remove(&active_id);
-            return Ok(()); 
+            return Ok(());
         }
 
         if valid {

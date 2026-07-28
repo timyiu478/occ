@@ -1,11 +1,11 @@
-use std::collections::{BTreeMap, HashSet};
-use std::hash::Hash;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Mutex;
+use super::OccEngine;
 use crate::error::OccError;
 use crate::storage::Storage;
 use crate::transaction::{LocalChange, Transaction, TxCleanup};
-use super::OccEngine;
+use std::collections::{BTreeMap, HashSet};
+use std::hash::Hash;
+use std::sync::Mutex;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 struct CommittedTx<K> {
     tx_id: u64,
@@ -30,7 +30,7 @@ impl<K, V> SerialEngine<K, V> {
         Self {
             storage: Storage::new(),
             global_tn: AtomicU64::new(1),
-            state: Mutex::new(SerialEngineState{
+            state: Mutex::new(SerialEngineState {
                 history: Vec::new(),
                 active_snapshots: BTreeMap::new(),
             }),
@@ -43,7 +43,9 @@ impl<K, V> SerialEngine<K, V> {
         let mut state = self.state.lock().unwrap();
 
         // 1. Deregister the start_tn from active snapshots
-        if let std::collections::btree_map::Entry::Occupied(mut entry) = state.active_snapshots.entry(start_tn) {
+        if let std::collections::btree_map::Entry::Occupied(mut entry) =
+            state.active_snapshots.entry(start_tn)
+        {
             *entry.get_mut() -= 1;
             if *entry.get() == 0 {
                 entry.remove();
@@ -60,7 +62,9 @@ impl<K, V> SerialEngine<K, V> {
             .unwrap_or_else(|| self.global_tn.load(Ordering::SeqCst));
 
         // 3. Prune history entries that are strictly older than or equal to min_active_tn
-        state.history.retain(|committed| committed.tx_id > min_active_tn);
+        state
+            .history
+            .retain(|committed| committed.tx_id > min_active_tn);
     }
 }
 
@@ -92,7 +96,11 @@ where
             if committed.tx_id <= tx.start_tn {
                 break;
             }
-            if committed.keys_modified.iter().any(|k| tx.read_set.contains(k)) {
+            if committed
+                .keys_modified
+                .iter()
+                .any(|k| tx.read_set.contains(k))
+            {
                 return Err(OccError::ValidationFailed);
             }
         }
@@ -144,10 +152,12 @@ mod internal_tests {
 
         // 2. Commit 5 separate transactions while long_reader is alive
         for i in 0..5 {
-            engine.transaction(|tx| {
-                tx.write("key", i);
-                Ok(())
-            }).unwrap();
+            engine
+                .transaction(|tx| {
+                    tx.write("key", i);
+                    Ok(())
+                })
+                .unwrap();
         }
 
         // History MUST retain all 5 entries because long_reader pins the horizon

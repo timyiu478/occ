@@ -1,9 +1,9 @@
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use occ::{OccEngine, SerialEngine, ParallelEngine};
+use occ::{OccEngine, ParallelEngine, SerialEngine};
 
 // =========================================================================
 // Benchmark Configuration Types
@@ -170,22 +170,40 @@ where
 // =========================================================================
 
 fn main() {
-    println!("=============================================================================================");
-    println!("                       OCC BENCHMARK: SERIAL vs PARALLEL ENGINE                              ");
-    println!("=============================================================================================");
+    println!(
+        "============================================================================================="
+    );
+    println!(
+        "                       OCC BENCHMARK: SERIAL vs PARALLEL ENGINE                              "
+    );
+    println!(
+        "============================================================================================="
+    );
 
     let durations = Duration::from_secs(2);
     let keys_per_tx = 4;
 
     // Test combinations
     let thread_counts = vec![1, 4, 8, 16];
-    let contentions = vec![ContentionLevel::Low, ContentionLevel::Medium, ContentionLevel::High];
+    let contentions = vec![
+        ContentionLevel::Low,
+        ContentionLevel::Medium,
+        ContentionLevel::High,
+    ];
 
     println!(
         "{:<10} | {:<15} | {:<7} | {:<12} | {:<12} | {:<11} | {:<15}",
-        "Engine", "Contention", "Threads", "Attempted", "Committed", "Abort Rate", "Throughput (tx/s)"
+        "Engine",
+        "Contention",
+        "Threads",
+        "Attempted",
+        "Committed",
+        "Abort Rate",
+        "Throughput (tx/s)"
     );
-    println!("---------------------------------------------------------------------------------------------");
+    println!(
+        "---------------------------------------------------------------------------------------------"
+    );
 
     for contention in contentions {
         for &threads in &thread_counts {
@@ -207,7 +225,9 @@ fn main() {
             let parallel_res = run_benchmark("Parallel", &parallel_engine, config);
             print_result_row(&parallel_res);
 
-            println!("---------------------------------------------------------------------------------------------");
+            println!(
+                "---------------------------------------------------------------------------------------------"
+            );
         }
     }
 }
