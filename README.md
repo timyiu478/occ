@@ -75,9 +75,7 @@ threads under Low contention, the Serial engine maintains a low median latency
 handles this much better, keeping its p99 at 601 µs.
 
 * A Reversal in High Contention Performance:
-Unlike previous runs, the Parallel engine now heavily dominates the Serial
-engine under High contention (10 keys) at higher thread counts. At 16 threads,
-the Parallel engine achieves over double the throughput (203k tx/s vs 91k tx/s)
+At 16 threads, the Parallel engine achieves over double the throughput (203k tx/s vs 91k tx/s)
 and maintains a notably lower abort rate (37.21% vs 47.06%). While both engines
 suffer identical p99 tail latencies (~479 µs) in this worst-case scenario, the
 Parallel engine's validation logic resolves conflicts much more efficiently
