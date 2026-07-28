@@ -51,6 +51,8 @@ pub struct BenchmarkResult {
     pub successful_commits: u64,
     pub aborts: u64,
     pub elapsed_secs: f64,
+    pub p50_latency_us: f64,
+    pub p99_latency_us: f64,
 }
 
 impl BenchmarkResult {
@@ -109,19 +111,26 @@ where
     let start_time = Instant::now();
 
     // std::thread::scope allows threads to safely borrow `engine` without 'static bounds
-    thread::scope(|s| {
+    let mut all_latencies = thread::scope(|s| {
+        let mut handles = Vec::with_capacity(config.num_threads);
+        
         for thread_id in 0..config.num_threads {
             let running_clone = Arc::clone(&running);
             let total_clone = Arc::clone(&total_attempts);
             let success_clone = Arc::clone(&successful_commits);
             let aborts_clone = Arc::clone(&aborts);
 
-            s.spawn(move || {
+            let handle = s.spawn(move || {
                 let mut rng = FastRng::new((thread_id as u64 + 1) * 987654321);
                 let key_space = config.contention.key_space_size();
+                
+                // Pre-allocate vector to prevent resize overheads in the hot loop
+                let mut local_latencies = Vec::with_capacity(500_000); 
 
                 while running_clone.load(Ordering::Relaxed) {
                     total_clone.fetch_add(1, Ordering::Relaxed);
+
+                    let tx_start = Instant::now();
 
                     let res = engine.transaction(|tx| {
                         for _ in 0..config.keys_per_tx {
@@ -136,6 +145,9 @@ where
                         Ok(())
                     });
 
+                    // Record latency in microseconds
+                    local_latencies.push(tx_start.elapsed().as_micros() as u32);
+
                     match res {
                         Ok(_) => {
                             success_clone.fetch_add(1, Ordering::Relaxed);
@@ -145,15 +157,40 @@ where
                         }
                     }
                 }
+                local_latencies
             });
+            handles.push(handle);
         }
 
         // Run benchmark for the configured duration while worker threads execute
         thread::sleep(config.test_duration);
         running.store(false, Ordering::SeqCst);
-    }); // All threads are automatically joined here when `scope` closes!
+        
+        // Collect all latency vectors from joined threads
+        let mut merged_latencies = Vec::new();
+        for handle in handles {
+            if let Ok(mut thread_latencies) = handle.join() {
+                merged_latencies.append(&mut thread_latencies);
+            }
+        }
+        merged_latencies
+    });
 
     let elapsed = start_time.elapsed().as_secs_f64();
+
+    // Calculate Percentiles
+    let mut p50_latency = 0.0;
+    let mut p99_latency = 0.0;
+    
+    if !all_latencies.is_empty() {
+        all_latencies.sort_unstable(); // Sort to find percentiles
+        let len = all_latencies.len() as f64;
+        let p50_idx = (len * 0.50) as usize;
+        let p99_idx = (len * 0.99) as usize;
+        
+        p50_latency = all_latencies[p50_idx.min(all_latencies.len() - 1)] as f64;
+        p99_latency = all_latencies[p99_idx.min(all_latencies.len() - 1)] as f64;
+    }
 
     BenchmarkResult {
         engine_name,
@@ -162,6 +199,8 @@ where
         successful_commits: successful_commits.load(Ordering::SeqCst),
         aborts: aborts.load(Ordering::SeqCst),
         elapsed_secs: elapsed,
+        p50_latency_us: p50_latency,
+        p99_latency_us: p99_latency,
     }
 }
 
@@ -171,13 +210,13 @@ where
 
 fn main() {
     println!(
-        "============================================================================================="
+        "====================================================================================================================="
     );
     println!(
-        "                       OCC BENCHMARK: SERIAL vs PARALLEL ENGINE                              "
+        "                                     OCC BENCHMARK: SERIAL vs PARALLEL ENGINE                                        "
     );
     println!(
-        "============================================================================================="
+        "====================================================================================================================="
     );
 
     let durations = Duration::from_secs(2);
@@ -192,17 +231,19 @@ fn main() {
     ];
 
     println!(
-        "{:<10} | {:<15} | {:<7} | {:<12} | {:<12} | {:<11} | {:<15}",
+        "{:<10} | {:<15} | {:<7} | {:<12} | {:<12} | {:<11} | {:<15} | {:<10} | {:<10}",
         "Engine",
         "Contention",
         "Threads",
         "Attempted",
         "Committed",
         "Abort Rate",
-        "Throughput (tx/s)"
+        "Throughput/s",
+        "p50 (µs)",
+        "p99 (µs)"
     );
     println!(
-        "---------------------------------------------------------------------------------------------"
+        "---------------------------------------------------------------------------------------------------------------------"
     );
 
     for contention in contentions {
@@ -226,7 +267,7 @@ fn main() {
             print_result_row(&parallel_res);
 
             println!(
-                "---------------------------------------------------------------------------------------------"
+                "---------------------------------------------------------------------------------------------------------------------"
             );
         }
     }
@@ -234,13 +275,15 @@ fn main() {
 
 fn print_result_row(res: &BenchmarkResult) {
     println!(
-        "{:<10} | {:<15} | {:<7} | {:<12} | {:<12} | {:<10.2}% | {:<15.2}",
+        "{:<10} | {:<15} | {:<7} | {:<12} | {:<12} | {:<10.2}% | {:<15.2} | {:<10.2} | {:<10.2}",
         res.engine_name,
         res.config.contention.as_str(),
         res.config.num_threads,
         res.total_attempts,
         res.successful_commits,
         res.abort_rate(),
-        res.throughput()
+        res.throughput(),
+        res.p50_latency_us,
+        res.p99_latency_us
     );
 }
