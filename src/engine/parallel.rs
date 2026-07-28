@@ -4,7 +4,7 @@ use crate::storage::Storage;
 use crate::transaction::{LocalChange, Transaction, TxCleanup};
 use std::collections::{BTreeMap, HashSet};
 use std::hash::Hash;
-use std::sync::RwLock;
+use std::sync::{Mutex, RwLock};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 struct CommittedTx<K> {
@@ -16,13 +16,12 @@ pub struct ParallelEngine<K, V> {
     storage: Storage<K, V>,
     global_tn: AtomicU64, // Used for committed transaction sequence numbers (tn)
     next_tx_id: AtomicU64, // Used to assign unique active IDs
+    active_snapshots: Mutex<BTreeMap<u64, usize>>, // Tracks active transactions by start_tn -> reference count
     state: RwLock<ParallelEngineState<K>>,
 }
 
 struct ParallelEngineState<K> {
     history: Vec<CommittedTx<K>>,
-    /// Tracks active transactions by start_tn -> reference count
-    active_snapshots: BTreeMap<u64, usize>,
     /// Tracks transactions currently in the 'tend' validation/write phase
     /// Maps TxId -> write_set of the validating transaction
     active_validating: BTreeMap<u64, HashSet<K>>,
@@ -34,10 +33,10 @@ impl<K, V> ParallelEngine<K, V> {
             storage: Storage::new(),
             global_tn: AtomicU64::new(1),
             next_tx_id: AtomicU64::new(1),
+            active_snapshots: Mutex::new(BTreeMap::new()),
             state: RwLock::new(ParallelEngineState {
                 history: Vec::new(),
                 active_validating: BTreeMap::new(),
-                active_snapshots: BTreeMap::new(),
             }),
         }
     }
@@ -45,11 +44,11 @@ impl<K, V> ParallelEngine<K, V> {
     /// Unregisters an active transaction snapshot and immediately prunes
     /// stale history entries up to the new active snapshot horizon.
     fn unregister_snapshot(&self, start_tn: u64) {
-        let mut state = self.state.write().unwrap();
+        let mut snapshots = self.active_snapshots.lock().unwrap();
 
         // 1. Deregister the start_tn from active snapshots
         if let std::collections::btree_map::Entry::Occupied(mut entry) =
-            state.active_snapshots.entry(start_tn)
+            snapshots.entry(start_tn)
         {
             *entry.get_mut() -= 1;
             if *entry.get() == 0 {
@@ -59,14 +58,15 @@ impl<K, V> ParallelEngine<K, V> {
 
         // 2. Compute the new minimum active snapshot point.
         // If no transactions are active, everything up to current global_tn is safe to prune.
-        let min_active_tn = state
-            .active_snapshots
+        let min_active_tn = snapshots
             .keys()
             .next()
             .copied()
             .unwrap_or_else(|| self.global_tn.load(Ordering::SeqCst));
 
         // 3. Prune history entries that are strictly older than or equal to min_active_tn
+        let mut state = self.state.write().unwrap();
+
         state
             .history
             .retain(|committed| committed.tx_id > min_active_tn);
@@ -81,9 +81,10 @@ where
     fn begin(&'a self) -> Transaction<'a, K, V> {
         let start_tn = self.global_tn.load(Ordering::SeqCst);
 
-        let mut state = self.state.write().unwrap();
-        *state.active_snapshots.entry(start_tn).or_default() += 1;
-        drop(state);
+        {
+            let mut snapshots = self.active_snapshots.lock().unwrap();
+            *snapshots.entry(start_tn).or_default() += 1;
+        }
 
         let cleanup = TxCleanup::new(move || {
             self.unregister_snapshot(start_tn);
