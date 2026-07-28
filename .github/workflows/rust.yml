@@ -29,9 +29,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.89.0 # Specify the Rust version
+          toolchain: 1.89.0
           override: true
-      - name: Install Tools
-        run: make install-tools
-      - name: Run Lint
-        run: make lint
+      - name: Install components
+        run: |
+          rustup component add clippy rustfmt
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Run clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
